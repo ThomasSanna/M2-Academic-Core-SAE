@@ -13,7 +13,7 @@ Sert à mesurer :
 | `date` | `AAAA-MM-JJ` |
 | `auteur` | prénom (ex. `daniel`) |
 | `tache` | courte description, ou n° d'issue |
-| `module` | `auth`, `api`, `bdd`, `algo`, `front`, `ci`… et **`infra-agent`** pour la mise en place de l'architecture agentique (CLAUDE.md, skills, sous-agents, hooks) |
+| `module` | `auth`, `api`, `bdd`, `algo`, `front`, `ci`… et **`infra-agent`** pour la mise en place de l'architecture agentique (AGENTS.md, skills, sous-agents, hooks) |
 | `outil` | `claude-code`, `copilot`, `chatgpt`, `cursor`… ou `aucun` |
 | `estimation_min` | temps estimé **avant** de commencer |
 | `temps_reel_min` | temps total réel |
@@ -46,6 +46,14 @@ python journal/tokens.py --since "2026-11-05 14:00"   # ou sans argument : derni
 ```
 
 La dernière ligne affichée se colle telle quelle dans les colonnes `tours` à `cout_usd`. Le script lit les transcripts Claude Code locaux, sous-agents compris : chacun le lance sur sa propre machine.
+
+Le script affiche aussi des durées, calculées à partir des horodatages du transcript :
+- `debut`, `fin`, `duree_min` : du premier au dernier horodatage de la plage. C'est la base de `temps_reel_min`, à compléter avec le temps passé hors de Claude Code (IDE, GitHub, réunions).
+- `duree_agent_min` : temps pendant lequel l'agent travaillait, d'après la durée de chaque tour terminé enregistrée par Claude Code. La différence avec `duree_min`, c'est le temps passé côté humain (lecture, réflexion, prompts).
+
+`temps_revue_min` et `temps_correction_min` restent à remplir à la main : la relecture et les corrections faites hors de Claude Code n'apparaissent dans aucun transcript.
+
+Une case vide n'est pas un zéro : `stats.py` l'exclut des moyennes et affiche `non renseigné` si aucune ligne n'a la valeur.
 
 Le coût est calculé au tarif API (grille dans `PRICES`, en tête du script), même si vous êtes sur un abonnement : c'est ce que la tâche aurait coûté en API.
 

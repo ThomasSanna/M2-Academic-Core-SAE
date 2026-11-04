@@ -9,3 +9,10 @@ Toute modification de `db/init.sql` ou du contrat d'API passe par une ligne ici.
 | Date proposition | Proposé par | Portée | Type | Changement | Raison | Validé par | Date décision | Statut |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | | | | schéma / API | | | | | |
+
+## Écarts connus à arbitrer
+
+Écarts entre `db/init.sql` et le plan du groupe 3, à passer en ligne `proposé` ci-dessus quand on les traite :
+- `calendar_syncs` : le plan prévoit `external_calendar_id` et `sync_token`.
+- `semesters` : le plan n'a pas de dates.
+- `audit_logs` : absent du plan.
