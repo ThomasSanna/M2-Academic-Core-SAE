@@ -62,7 +62,7 @@ def cost(model: str, u: dict) -> float | None:
 
 
 def count(files: list[Path], since: datetime | None, until: datetime | None) -> dict:
-    seen, prompts, unpriced = set(), set(), set()
+    seen, prompts, unpriced, stamps = set(), set(), set(), []
     totals = defaultdict(float)
     for path in files:
         for line in path.open(encoding="utf-8"):
@@ -72,9 +72,13 @@ def count(files: list[Path], since: datetime | None, until: datetime | None) -> 
             ts = datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
             if (since and ts < since) or (until and ts > until):
                 continue
+            stamps.append(ts)
             # Un tour = un prompt humain (les résultats d'outils partagent son promptId)
             if entry.get("type") == "user" and not entry.get("isSidechain") and entry.get("promptId"):
                 prompts.add(entry["promptId"])
+            # Claude Code écrit la durée de chaque tour terminé (du prompt à la fin de la réponse)
+            if entry.get("subtype") == "turn_duration":
+                totals["duree_agent_min"] += entry.get("durationMs", 0) / 60_000
             msg = entry.get("message")
             if not isinstance(msg, dict) or not msg.get("usage") or msg.get("id") in seen:
                 continue
@@ -90,6 +94,9 @@ def count(files: list[Path], since: datetime | None, until: datetime | None) -> 
                 totals["cout_usd"] += c
     totals["tours"] = len(prompts)
     totals["reponses"] = len(seen)
+    if stamps:
+        totals["debut"], totals["fin"] = min(stamps), max(stamps)
+        totals["duree_min"] = (totals["fin"] - totals["debut"]).total_seconds() / 60
     if unpriced:
         print(f"Attention : modèles sans tarif dans PRICES, exclus du coût : {unpriced}")
     return totals
@@ -102,9 +109,14 @@ def main() -> None:
     args = parser.parse_args()
 
     t = count(session_files(args.since), args.since, args.until)
+    if "debut" in t:
+        for k in ("debut", "fin"):
+            print(f"{k:16} {t[k].astimezone():%Y-%m-%d %H:%M}")
+        print(f"{'duree_min':16} {t['duree_min']:.0f}   (premier au dernier horodatage : base pour temps_reel_min)")
+    print(f"{'duree_agent_min':16} {t['duree_agent_min']:.0f}   (temps où l'agent travaillait, tours terminés seulement)")
     for k in ("tours", "reponses", "entree", "cache_lu", "sortie"):
-        print(f"{k:12} {int(t[k])}")
-    print(f"{'cout_usd':12} {t['cout_usd']:.2f}")
+        print(f"{k:16} {int(t[k])}")
+    print(f"{'cout_usd':16} {t['cout_usd']:.2f}")
     print("\nColonnes CSV (tours,tokens_entree,tokens_cache_lu,tokens_sortie,cout_usd) :")
     print(f"{int(t['tours'])},{int(t['entree'])},{int(t['cache_lu'])},{int(t['sortie'])},{t['cout_usd']:.2f}")
 
