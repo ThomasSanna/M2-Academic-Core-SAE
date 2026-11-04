@@ -30,7 +30,11 @@ FastAPI (Python) · PostgreSQL 16 · JWT + rôles (RBAC) · Docker compose · py
 - Lancer : `docker compose up --build` → API :8000 (`/docs`), Postgres :5432 (`sae`/`sae`/`sae`).
 - `docs/` : voir ci-dessous.
 
-## Docs (`docs/`)
+## Documents pour l'enseignant (`rapport/`)
+Tous les documents de type rapport destinés au prof vont dans `rapport/`, en Typst (gabarit commun `rapport/template.typ`, bibliographie commune `rapport/refs.bib`, style IEEE). Compiler : `typst compile rapport/<fichier>.typ`. Sources vérifiées et citées, jamais inventées.
+- `etat-de-l-art.typ` : état de l'art sur les architectures agentiques.
+
+## Docs de travail (`docs/`)
 - `infos.md` : socle commun (routes + modèle de données).
 - `document_cadrage_M2_2026_2027_projet_SAE.md` : cadrage de l'enseignant.
 - `Plan_Projet_M2.md` : sections Groupes 1-4 + socle commun (très lourd, images base64 : lire par plage de lignes ; Groupe 3 = l. 247-483).
