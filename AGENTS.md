@@ -38,7 +38,7 @@ FastAPI + PostgreSQL 16 via psycopg, sans ORM : helper `query(sql, params)` dans
 
 - Avant toute modification, check état des branches, créer une branche `<type>/<nom>` (`feature/`, `fix/`, `docs/`…) si pas déjà fait, puis ouvrir une PR vers `dev`. La PR `dev` → `main` se fait seulement sur demande.
 - Toute modification de `db/init.sql` ou du contrat d'API va dans le même commit/PR qu'une ligne de `docs/CHANGELOG-schema-api.md` (statut `proposé`).
-- Langue : titres et descriptions de PR en français ; code, identifiants, commentaires, messages de commit et noms de branches en anglais. Les clés des trailers (`IA: genere`, `IA: retouche`, `Corrige:`) restent telles quelles, car `journal/stats.py` les lit.
+- Langue : titres et descriptions de PR, et documentation (`docs/`, README) en français ; code, identifiants, commentaires, messages de commit et noms de branches en anglais. Les clés des trailers (`IA: genere`, `IA: retouche`, `Corrige:`) restent telles quelles, car `journal/stats.py` les lit.
 - Commits en Conventional Commits (`.gitmessage`) avec le trailer d'origine : `IA: genere` (code généré commité tel quel), `IA: retouche` (corrections à la main, commit séparé), aucun trailer pour le code écrit à la main. Un fix de bug porte `Corrige: <sha du commit fautif>`.
 - Sécurité, avant d'écrire du code et en relisant le diff :
   - SQL toujours paramétré via `query(sql, params)`, jamais de f-string ni de concaténation ;
