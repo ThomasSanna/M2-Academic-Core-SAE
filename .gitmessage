@@ -1,0 +1,11 @@
+
+
+# type(module): description courte   (feat, fix, refactor, test, docs, chore)
+#
+# Trailers à garder (décommenter) selon l'origine du code :
+# IA: genere         -> code produit par l'IA, commité tel quel
+# IA: retouche       -> corrections à la main du code généré
+#                    -> (aucun trailer) code écrit à la main
+# Corrige: <sha>     -> ce commit corrige un bug introduit par <sha>
+#
+# Activer ce modèle : git config commit.template .gitmessage
