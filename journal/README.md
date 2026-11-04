@@ -12,16 +12,16 @@ Sert à mesurer :
 | :--- | :--- |
 | `date` | `AAAA-MM-JJ` |
 | `auteur` | prénom (ex. `daniel`) |
-| `tache` | courte description, ou n° d'issue |
+| `tache` | n° de PR (ou d'issue) puis courte description, ex. `#12 routes /auth` |
 | `module` | `auth`, `api`, `bdd`, `algo`, `front`, `ci`… et **`infra-agent`** pour la mise en place de l'architecture agentique (AGENTS.md, skills, sous-agents, hooks) |
 | `outil` | `claude-code`, `copilot`, `chatgpt`, `cursor`… ou `aucun` |
 | `estimation_min` | temps estimé **avant** de commencer |
-| `temps_reel_min` | temps total réel |
+| `temps_reel_min` | du début du travail à l'ouverture de la PR ; **inclut** setup, revue et correction |
 | `temps_setup_min` | mise en place pour cette tâche (prompt, contexte) |
 | `temps_revue_min` | relecture du code généré |
 | `temps_correction_min` | corrections à la main ou par re-prompt |
-| `interventions` | nombre de fois où il a fallu reprendre la main ou recadrer l'agent |
-| `succes_sans_intervention` | `oui` / `non` |
+| `interventions` | nombre d'interventions humaines (voir définition ci-dessous) |
+| `succes_sans_intervention` | `oui` si `interventions = 0` et que la tâche aboutit à une PR, sinon `non` (tâche abandonnée comprise). Passer à `non` si la PR est refusée ensuite |
 | `tours` | nombre de prompts envoyés (donné par `tokens.py`) |
 | `tokens_entree` | tokens d'entrée hors lecture de cache (donné par `tokens.py`) |
 | `tokens_cache_lu` | tokens relus depuis le cache : contexte répété à chaque tour (donné par `tokens.py`) |
@@ -32,10 +32,17 @@ Sert à mesurer :
 Exemple :
 
 ```csv
-2026-11-05,daniel,routes /auth (login + refresh),auth,claude-code,60,95,15,20,10,3,non,10,148076,1744442,28482,1.89,"bcrypt oublié, refresh token mal expiré"
+2026-11-05,daniel,#12 routes /auth (login + refresh),auth,claude-code,60,95,15,20,10,3,non,10,148076,1744442,28482,1.89,"bcrypt oublié, refresh token mal expiré"
 ```
 
 Ajoutez vos lignes **en fin de fichier** pour limiter les conflits git.
+
+### Définitions
+
+- **Tâche** : une PR (ou une issue). Si elle s'étale sur plusieurs sessions, lancer `tokens.py` sur chaque plage et additionner.
+- **Intervention** : compte +1 pour chaque message qui corrige, réoriente ou refuse ce que l'agent a produit ou s'apprête à faire, et +1 pour chaque retouche du code généré faite à la main. Ne comptent pas : répondre à une question de l'agent, valider (« oui », « go »), ajouter une demande nouvelle qui ne remet pas en cause le travail déjà fait.
+  - Compte : « non, on déploie avec GitHub Actions vers notre VPS, pas avec Caddy » (correction).
+  - Ne compte pas : « oui, applique » (validation), « ajoute aussi l'export iCal » (nouvelle demande).
 
 ### Tours, tokens, coût
 
