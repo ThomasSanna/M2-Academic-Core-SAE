@@ -4,7 +4,7 @@ Base à forker : une base PostgreSQL et une API FastAPI, lancées avec Docker.
 Le front est propre à chacun (voir la fin de `docker-compose.yml`).
 
 ```
-bdd/init.sql        schéma complet + données de référence
+db/init.sql        schéma complet + données de référence
 backend/main.py     l'API (une seule route d'exemple, à compléter)
 docs/infos.md       spécification (routes, modèle de données)
 ```
@@ -23,7 +23,7 @@ Si un port est déjà pris, copiez `.env.example` en `.env` et changez `POSTGRES
 
 ## Base de données
 
-`bdd/init.sql` n'est exécuté **qu'au premier démarrage**. Après l'avoir modifié, recréez la base :
+`db/init.sql` n'est exécuté **qu'au premier démarrage**. Après l'avoir modifié, recréez la base :
 
 ```bash
 docker compose down -v   # supprime les données
