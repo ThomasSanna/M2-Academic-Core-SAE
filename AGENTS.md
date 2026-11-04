@@ -20,6 +20,27 @@ python journal/stats.py                   # agrégation du journal et des traile
 
 FastAPI + PostgreSQL 16 via psycopg, sans ORM : helper `query(sql, params)` dans `backend/main.py`. JWT + RBAC (pas encore implémenté). Docker compose. Front : React/Next.js + Tailwind + shadcn/ui (pas encore créé, géré par les DFS). Déploiement prévu, pas encore en place : sur push `main`, GitHub Actions construit les images, les pousse sur ghcr et les déploie sur un VPS (docker compose).
 
+## Conventions de code
+
+- Modulaire : un fichier de plus de 600 lignes se découpe, une fonction de complexité cyclomatique supérieure à 10 (radon : C ou pire) aussi. Un fichier = une responsabilité.
+- Backend découpé par couche (dossiers à créer quand le code arrive) :
+  - `backend/routers/<domaine>.py` : HTTP seulement (validation, auth, codes de retour), aucun SQL ;
+  - `backend/repositories/<domaine>.py` : tout le SQL, via `query(sql, params)` ;
+  - `backend/schemas/<domaine>.py` : modèles Pydantic, séparés en entrée (`XCreate`, `XUpdate`) et en sortie (`XOut`) ;
+  - `backend/scheduling/` : algorithmes de génération en Python pur, sans import de FastAPI ni de psycopg. Ils prennent des données en mémoire et rendent une solution, ce qui permet de les tester et de les benchmarker sans base.
+- La connexion BDD et l'utilisateur courant sont injectés par `Depends`, jamais lus dans une variable globale ni décodés à la main dans chaque route.
+- Une écriture sur plusieurs tables (une séance avec ses `session_teachers` et `session_groups`) se fait en une seule transaction, contrôle de conflits compris.
+- Chaque route déclare son `response_model` : c'est lui qui empêche de renvoyer `password_hash` ou des champs internes.
+- Routes de liste : relations chargées en une requête (`JOIN` + `json_agg`), jamais une requête par ligne (N+1), et pagination `limit`/`offset`.
+- Codes d'erreur :
+  - 409 avec le détail du conflit (ressource et séance en cause) ;
+  - 403 si le rôle manque ;
+  - 404 si la ressource n'existe pas, et aussi si elle appartient à quelqu'un d'autre (les notes perso par exemple), pour ne pas révéler son existence.
+- Dates toujours avec fuseau (`datetime.now(UTC)`), jamais de `datetime` naïf.
+- Tests contre le vrai PostgreSQL du compose, sans mocker le SQL. Tout correctif de bug ajoute le test qui l'aurait détecté.
+- Front : les types TypeScript de l'API sont générés depuis `/openapi.json`, jamais écrits à la main.
+- Pas d'outil de migration : une PR qui modifie `db/init.sql` le signale en tête de description, car chacun doit recréer sa base (`docker compose down -v`).
+
 ## Où trouver quoi
 
 | Besoin | Fichier |
