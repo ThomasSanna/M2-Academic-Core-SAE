@@ -62,7 +62,7 @@ def cost(model: str, u: dict) -> float | None:
 
 
 def count(files: list[Path], since: datetime | None, until: datetime | None) -> dict:
-    seen, prompts, unpriced, stamps = set(), set(), set(), []
+    seen, prompts, local_commands, unpriced, stamps = set(), set(), set(), set(), []
     totals = defaultdict(float)
     for path in files:
         for line in path.open(encoding="utf-8"):
@@ -76,6 +76,10 @@ def count(files: list[Path], since: datetime | None, until: datetime | None) -> 
             # Un tour = un prompt humain (les résultats d'outils partagent son promptId)
             if entry.get("type") == "user" and not entry.get("isSidechain") and entry.get("promptId"):
                 prompts.add(entry["promptId"])
+                # /model, /effort... are run by Claude Code itself: nothing is sent to the model
+                content = (entry.get("message") or {}).get("content")
+                if isinstance(content, str) and content.startswith("<local-command-"):
+                    local_commands.add(entry["promptId"])
             # Claude Code écrit la durée de chaque tour terminé (du prompt à la fin de la réponse)
             if entry.get("subtype") == "turn_duration":
                 totals["duree_agent_min"] += entry.get("durationMs", 0) / 60_000
@@ -92,7 +96,7 @@ def count(files: list[Path], since: datetime | None, until: datetime | None) -> 
                 unpriced.add(msg.get("model"))
             else:
                 totals["cout_usd"] += c
-    totals["tours"] = len(prompts)
+    totals["tours"] = len(prompts - local_commands)
     totals["reponses"] = len(seen)
     if stamps:
         totals["debut"], totals["fin"] = min(stamps), max(stamps)
