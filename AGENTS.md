@@ -2,6 +2,17 @@
 
 Fork du starter commun aux 4 groupes : SIS/ERP éducatif, sous-projet B (emplois du temps). Nous sommes le groupe **agentique** : le plus de code possible produit par des agents, et chaque usage de l'IA est mesuré. Le groupe 2 travaille sur les mêmes objectifs en approche classique. L'intégration avec lui viendra plus tard, et chaque groupe a sa propre base.
 
+## Fin de tâche : la ligne du journal IA
+
+Le journal est une donnée centrale du rapport : une tâche n'est pas terminée tant que sa ligne n'est pas dans `journal/ia.csv`. C'est à l'agent d'y penser, sans attendre qu'on le lui demande :
+
+1. Au début d'une tâche, noter l'heure (`date "+%Y-%m-%d %H:%M"`).
+2. Une fois la tâche finie (PR ouverte, ou dernier commit poussé s'il n'y a pas de PR), **avant d'annoncer la fin**, lancer `python journal/tokens.py --since "<heure de début>"`.
+3. Proposer la ligne complète, au format de `journal/README.md` : colonnes recopiées de `tokens.py` ; `interventions` comptées d'après la conversation, avec les messages comptés résumés dans `commentaire` ; `estimation_min` et `temps_revue_min` demandés à l'humain, laissés vides s'il ne les donne pas, jamais inventés.
+4. Après validation, l'ajouter en fin de fichier et la commiter sur la branche de la tâche (`docs(journal): ...`, sans trailer).
+
+Si une nouvelle tâche commence dans la même conversation, faire d'abord la ligne de la précédente. Module `infra-agent` pour le travail sur l'architecture agentique elle-même.
+
 ## Commandes
 
 ```bash
@@ -70,7 +81,7 @@ FastAPI + PostgreSQL 16 (driver psycopg), SQLAlchemy 2.x, migrations Alembic, py
   - chaque route vérifie le JWT et le rôle requis (RBAC), et un utilisateur n'accède qu'à ses propres données (notes, préférences, disponibilités) ;
   - entrées validées par des modèles Pydantic, imports CSV compris ;
   - mots de passe hachés en bcrypt ; aucun secret, token ou mot de passe dans le code, les logs ou les réponses d'API.
-- Une ligne par tâche dans `journal/ia.csv`, ajoutée en fin de fichier. Module `infra-agent` pour le travail sur l'architecture agentique elle-même.
+- Une ligne par tâche dans `journal/ia.csv`, proposée par l'agent dès la fin de la tâche (voir « Fin de tâche » en haut de ce fichier).
 - Les scripts de `journal/` doivent tolérer les données manquantes : les conventions ne sont pas suivies par tout le monde, et une partie de l'équipe n'a pas Claude Code.
 - Documents pour l'enseignant : dans `rapport/`, en Typst, avec le gabarit `rapport/template.typ` et la bibliographie `rapport/refs.bib` (IEEE). Chaque source est vérifiée, jamais inventée. L'enseignant note le recul critique plus que le résultat, et le rapport compare deux manières d'utiliser l'IA (classique et agentique), pas l'humain contre l'IA.
 
