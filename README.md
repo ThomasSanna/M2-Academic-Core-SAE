@@ -30,28 +30,47 @@ Si un port est déjà pris, copiez `.env.example` en `.env` et changez `POSTGRES
 
 ### Base de données
 
-`db/init.sql` n'est exécuté **qu'au premier démarrage**. Après une modification, recréez la base :
+Le schéma est défini par les modèles SQLAlchemy (`backend/models/`) et appliqué par les migrations Alembic (`backend/migrations/versions/`). Au démarrage, le backend applique les migrations en attente (`alembic upgrade head`) : il n'y a pas besoin de recréer la base après une modification du schéma.
+
+Pour modifier le schéma :
 
 ```bash
-docker compose down -v   # supprime les données
-docker compose up
+# 1. modifier le modèle dans backend/models/, puis générer la migration :
+docker compose exec backend alembic revision --autogenerate -m "add rooms.accessible"
+# 2. relire le fichier créé dans backend/migrations/versions/ (renommages, contraintes, downgrade)
+# 3. l'appliquer (ou redémarrer le backend) :
+docker compose exec backend alembic upgrade head
 ```
 
-Données déjà présentes :
-- rôles : `ADMIN`, `MANAGER`, `TEACHER`, `STUDENT`
-- types de séance : `CM`, `TD`, `TP`, `EXAM` (avec leurs couleurs)
-- un compte admin : `admin@example.com` / `admin1234` (mot de passe hashé en bcrypt)
+Données présentes après le démarrage :
+- rôles : `ADMIN`, `MANAGER`, `TEACHER`, `STUDENT` (migration `0002`)
+- types de séance : `CM`, `TD`, `TP`, `EXAM`, avec leurs couleurs (migration `0002`)
+- un compte admin de démo : `admin@example.com` / `admin1234`, mot de passe haché en bcrypt. Il est créé par `backend/seed.py`, en local seulement. On peut le changer avec `DEMO_ADMIN_EMAIL` et `DEMO_ADMIN_PASSWORD` dans `.env`.
+
+Pour repartir d'une base vide : `docker compose down -v` (supprime les données), puis `docker compose up`.
 
 ### Backend
 
-Le code est rechargé automatiquement à chaque sauvegarde. Pour ajouter une dépendance Python : l'ajouter dans `backend/requirements.txt`, puis `docker compose up --build`.
+Le code est rechargé automatiquement à chaque sauvegarde. Pour ajouter une dépendance Python : l'ajouter dans `backend/requirements.txt` (ou `requirements-dev.txt` pour un outil de test), puis `docker compose up --build`.
+
+Tests, contre le PostgreSQL du compose (une base `sae_test` est recréée à chaque lancement, la base de dev n'est pas touchée) :
+
+```bash
+docker compose exec backend pytest
+```
 
 ## Organisation du dépôt
 
 ```
 AGENTS.md          consignes pour les agents IA (et conventions de code)
 backend/           API FastAPI
-db/init.sql        schéma complet + données de référence (source de vérité)
+  main.py          création de l'application, montage des routers
+  routers/         HTTP : validation, codes de retour
+  repositories/    accès à la base (SQLAlchemy)
+  schemas/         modèles Pydantic d'entrée et de sortie
+  models/          modèles SQLAlchemy : schéma de la base (source de vérité)
+  migrations/      migrations Alembic
+  tests/           tests pytest
 docs/              cadrage, spécification, métriques, changelog du schéma et de l'API
 journal/           journal d'usage de l'IA et scripts de métriques
 rapport/           documents pour l'enseignant (Typst)

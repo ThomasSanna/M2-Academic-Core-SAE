@@ -62,8 +62,9 @@ def cost(model: str, u: dict) -> float | None:
 
 
 def count(files: list[Path], since: datetime | None, until: datetime | None) -> dict:
-    seen, prompts, unpriced, stamps = set(), set(), set(), []
+    seen, prompts, local_commands, unpriced, stamps = set(), set(), set(), set(), []
     totals = defaultdict(float)
+    output_by_model = defaultdict(int)
     for path in files:
         for line in path.open(encoding="utf-8"):
             entry = json.loads(line)
@@ -76,6 +77,10 @@ def count(files: list[Path], since: datetime | None, until: datetime | None) -> 
             # Un tour = un prompt humain (les résultats d'outils partagent son promptId)
             if entry.get("type") == "user" and not entry.get("isSidechain") and entry.get("promptId"):
                 prompts.add(entry["promptId"])
+                # /model, /effort... are run by Claude Code itself: nothing is sent to the model
+                content = (entry.get("message") or {}).get("content")
+                if isinstance(content, str) and content.startswith("<local-command-"):
+                    local_commands.add(entry["promptId"])
             # Claude Code écrit la durée de chaque tour terminé (du prompt à la fin de la réponse)
             if entry.get("subtype") == "turn_duration":
                 totals["duree_agent_min"] += entry.get("durationMs", 0) / 60_000
@@ -87,13 +92,16 @@ def count(files: list[Path], since: datetime | None, until: datetime | None) -> 
             totals["entree"] += u.get("input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
             totals["cache_lu"] += u.get("cache_read_input_tokens", 0)
             totals["sortie"] += u.get("output_tokens", 0)
+            output_by_model[msg.get("model") or "?"] += u.get("output_tokens", 0)
             c = cost(msg.get("model", ""), u)
             if c is None:
                 unpriced.add(msg.get("model"))
             else:
                 totals["cout_usd"] += c
-    totals["tours"] = len(prompts)
+    totals["tours"] = len(prompts - local_commands)
     totals["reponses"] = len(seen)
+    # Models that produced output, main one (most output tokens) first
+    totals["modeles"] = sorted(((m, n) for m, n in output_by_model.items() if n), key=lambda mn: -mn[1])
     if stamps:
         totals["debut"], totals["fin"] = min(stamps), max(stamps)
         totals["duree_min"] = (totals["fin"] - totals["debut"]).total_seconds() / 60
@@ -114,6 +122,10 @@ def main() -> None:
             print(f"{k:16} {t[k].astimezone():%Y-%m-%d %H:%M}")
         print(f"{'duree_min':16} {t['duree_min']:.0f}   (premier au dernier horodatage : base pour temps_reel_min)")
     print(f"{'duree_agent_min':16} {t['duree_agent_min']:.0f}   (temps où l'agent travaillait, tours terminés seulement)")
+    if t["modeles"]:
+        out = sum(n for _, n in t["modeles"])
+        shares = ", ".join(f"{m} {n / out:.0%}" for m, n in t["modeles"])
+        print(f"{'modele':16} {t['modeles'][0][0]}   (part des tokens de sortie : {shares})")
     for k in ("tours", "reponses", "entree", "cache_lu", "sortie"):
         print(f"{k:16} {int(t[k])}")
     print(f"{'cout_usd':16} {t['cout_usd']:.2f}")

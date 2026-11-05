@@ -12,14 +12,13 @@ Sert à mesurer :
 | :--- | :--- |
 | `date` | `AAAA-MM-JJ` |
 | `auteur` | prénom (ex. `daniel`) |
+| `modele` | modèle principal, ex. `claude-opus-5-5`. Donné par `tokens.py` : celui qui a produit le plus de tokens de sortie (les autres vont dans `commentaire`). Vide si `outil = aucun` |
 | `tache` | n° de PR (ou d'issue) puis courte description, ex. `#12 routes /auth` |
 | `module` | `auth`, `api`, `bdd`, `algo`, `front`, `ci`… et **`infra-agent`** pour la mise en place de l'architecture agentique (AGENTS.md, skills, sous-agents, hooks) |
 | `outil` | `claude-code`, `copilot`, `chatgpt`, `cursor`… ou `aucun` |
 | `estimation_min` | temps estimé **avant** de commencer |
-| `temps_reel_min` | du début du travail à l'ouverture de la PR ; **inclut** setup, revue et correction |
-| `temps_setup_min` | mise en place pour cette tâche (prompt, contexte) |
-| `temps_revue_min` | relecture du code généré |
-| `temps_correction_min` | corrections à la main ou par re-prompt |
+| `temps_reel_min` | du début du travail à l'ouverture de la PR ; **inclut** l'écriture des prompts, la revue et les corrections |
+| `temps_revue_min` | relecture du code généré **par vous** (pas par une IA), et corrections qui en découlent, à la main ou par re-prompt |
 | `interventions` | nombre d'interventions humaines (voir définition ci-dessous) |
 | `succes_sans_intervention` | `oui` si `interventions = 0` et que la tâche aboutit à une PR, sinon `non` (tâche abandonnée comprise). Passer à `non` si la PR est refusée ensuite |
 | `tours` | nombre de prompts envoyés (donné par `tokens.py`) |
@@ -32,7 +31,7 @@ Sert à mesurer :
 Exemple :
 
 ```csv
-2026-11-05,daniel,#12 routes /auth (login + refresh),auth,claude-code,60,95,15,20,10,3,non,10,148076,1744442,28482,1.89,"bcrypt oublié, refresh token mal expiré"
+2026-11-05,daniel,claude-sonnet-5-5,#12 routes /auth (login + refresh),auth,claude-code,60,95,30,3,non,10,148076,1744442,28482,1.89,"bcrypt oublié, refresh token mal expiré"
 ```
 
 Ajoutez vos lignes **en fin de fichier** pour limiter les conflits git.
@@ -52,19 +51,19 @@ Notez l'heure de début de la tâche. À la fin, lancez :
 python journal/tokens.py --since "2026-11-05 14:00"   # ou sans argument : dernière session
 ```
 
-La dernière ligne affichée se colle telle quelle dans les colonnes `tours` à `cout_usd`. Le script lit les transcripts Claude Code locaux, sous-agents compris : chacun le lance sur sa propre machine.
+La dernière ligne affichée se colle telle quelle dans les colonnes `tours` à `cout_usd`, et la ligne `modele` donne la colonne du même nom. Les commandes locales (`/model`, `/effort`…) ne comptent pas comme des tours : rien n'est envoyé au modèle. Le script lit les transcripts Claude Code locaux, sous-agents compris : chacun le lance sur sa propre machine.
 
 Le script affiche aussi des durées, calculées à partir des horodatages du transcript :
 - `debut`, `fin`, `duree_min` : du premier au dernier horodatage de la plage. C'est la base de `temps_reel_min`, à compléter avec le temps passé hors de Claude Code (IDE, GitHub, réunions).
 - `duree_agent_min` : temps pendant lequel l'agent travaillait, d'après la durée de chaque tour terminé enregistrée par Claude Code. La différence avec `duree_min`, c'est le temps passé côté humain (lecture, réflexion, prompts).
 
-`temps_revue_min` et `temps_correction_min` restent à remplir à la main : la relecture et les corrections faites hors de Claude Code n'apparaissent dans aucun transcript.
+`temps_revue_min` reste à remplir à la main : la relecture et les corrections faites hors de Claude Code n'apparaissent dans aucun transcript.
 
 Une case vide n'est pas un zéro : `stats.py` l'exclut des moyennes et affiche `non renseigné` si aucune ligne n'a la valeur.
 
 Le coût est calculé au tarif API (grille dans `PRICES`, en tête du script), même si vous êtes sur un abonnement : c'est ce que la tâche aurait coûté en API.
 
-**Sans Claude Code** : comptez `tours` à la main (nombre de prompts envoyés) et laissez les colonnes de tokens et de coût vides si l'outil ne les affiche pas. Le reste du journal s'applique à tout le monde.
+**Sans Claude Code** : comptez `tours` à la main (nombre de prompts envoyés), notez le modèle si l'outil l'affiche, et laissez les colonnes de tokens et de coût vides si l'outil ne les donne pas. Le reste du journal s'applique à tout le monde.
 
 ## 2. Trailers dans les commits
 
