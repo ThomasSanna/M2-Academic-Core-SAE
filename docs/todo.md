@@ -50,7 +50,17 @@
 
 - [ ] CI GitHub Actions : pytest et couverture, radon, mutmut, bandit, pip-audit (voir `metriques.md`).
 - [ ] SonarCloud : dette, duplication, code IA comparé au code manuel.
-- [ ] Déploiement : images ghcr, VPS, HTTPS, secrets (JWT, BDD), pas de compte de démo en production.
+- [ ] Déploiement (CD sur push `main`) :
+  - [x] Secrets du dépôt : `GHCR_USERNAME`, `GHCR_PAT`, `SERVER_IP`, `SERVER_USER`, `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`. Testés le 2026-11-05 par un workflow temporaire (connexion ghcr et SSH en vérification stricte).
+  - [ ] Workflow `.github/workflows/deploy.yml` sur push `main` : build de l'image, push sur ghcr, puis en SSH sur le VPS `docker compose pull && docker compose up -d`.
+  - [ ] Image construite pour `linux/arm64` : le VPS est en `aarch64` (Oracle Ampere A1), alors que les runners GitHub par défaut sont en x86_64. Prendre le runner `ubuntu-24.04-arm` ou `docker buildx --platform linux/arm64`.
+  - [ ] `docker-compose` de production : image ghcr, pas de port Postgres exposé, pas de seed ni de compte de démo, pas de `--reload` ni de code monté. API sur `127.0.0.1:8000` (port libre sur le VPS).
+  - [ ] Préparer le VPS : dossier du projet, `.env` hors GitHub (`POSTGRES_PASSWORD` fort, `CORS_ORIGINS`, plus tard le secret JWT), `docker login ghcr.io` si le package est privé.
+  - [ ] Package ghcr (`ghcr.io/dang2b/...`) public, ou lié au dépôt avec héritage des droits : sinon le `GHCR_PAT` de Thomas ne peut pas le télécharger. À vérifier après le premier push.
+  - [ ] Vhost nginx (déjà installé sur l'hôte) vers `127.0.0.1:8000`, nom de domaine, HTTPS.
+  - [ ] Protection de branche sur `main` (PR obligatoire), pour que seul un merge déclenche le déploiement. Réservé à un admin du dépôt (Daniel).
+  - [ ] Tests obligatoires avant le déploiement.
+  - [ ] Sauvegardes de la base (`pg_dump` planifié).
 - [ ] Tests e2e, charge (k6/locust), Lighthouse, questionnaire SUS.
 
 ## Mesure et architecture agentique
