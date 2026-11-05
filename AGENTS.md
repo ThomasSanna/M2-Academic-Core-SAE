@@ -8,7 +8,7 @@ Le journal est une donnée centrale du rapport : une tâche n'est pas terminée 
 
 1. Au début d'une tâche, noter l'heure (`date "+%Y-%m-%d %H:%M"`).
 2. Une fois la tâche finie (PR ouverte, ou dernier commit poussé s'il n'y a pas de PR), **avant d'annoncer la fin**, lancer `python journal/tokens.py --since "<heure de début>"`.
-3. Ajouter la ligne en fin de fichier, au format de `journal/README.md`, **sans attendre de validation** : colonnes recopiées de `tokens.py` ; `interventions` comptées d'après la conversation, avec les messages comptés résumés dans `commentaire`. Ce que l'agent ne peut pas savoir (`estimation_min`, `temps_revue_min`, souvent `temps_reel_min`) reste vide, jamais inventé : l'humain complète ou corrige après.
+3. Ajouter la ligne en fin de fichier, au format de `journal/README.md`, **sans attendre de validation** : colonnes recopiées de `tokens.py`, `temps_reel_min` compris (sa valeur `duree_min`, sans la remettre en doute) ; `interventions` comptées d'après la conversation, avec les messages comptés résumés dans `commentaire`. Ce que l'agent ne peut pas savoir (`estimation_min`, `temps_revue_min`) reste vide, jamais inventé : l'humain complète ou corrige après.
 4. La commiter sur la branche de la tâche (`docs(journal): ...`, sans trailer) et la pousser sur la PR.
 
 Si une nouvelle tâche commence dans la même conversation, faire d'abord la ligne de la précédente. Module `infra-agent` pour le travail sur l'architecture agentique elle-même.
