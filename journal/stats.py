@@ -53,9 +53,7 @@ def summarize(rows: list[dict]) -> dict:
         "temps_estime_min": total(values(rows, "estimation_min")),
         "temps_reel_min": total(values(rows, "temps_reel_min")),
         "ratio_reel_estime": sum(values(both, "temps_reel_min")) / est if est else None,
-        "temps_setup_min": total(values(rows, "temps_setup_min")),
         "temps_revue_min": total(values(rows, "temps_revue_min")),
-        "temps_correction_min": total(values(rows, "temps_correction_min")),
         "tours_par_tache": mean(values(rows, "tours")),
         "tokens_entree": total(values(rows, "tokens_entree")),
         "tokens_cache_lu": total(values(rows, "tokens_cache_lu")),
@@ -113,11 +111,12 @@ def print_journal(rows: list[dict]) -> None:
         by_author[r["auteur"]].append(r)
     for author, author_rows in sorted(by_author.items()):
         print_block(author, summarize(author_rows))
-    by_tool = defaultdict(list)
-    for r in rows:
-        by_tool[r["outil"] or "?"].append(r)
-    for tool, tool_rows in sorted(by_tool.items()):
-        print_block(f"outil : {tool}", summarize(tool_rows))
+    for column in ("outil", "modele"):
+        groups = defaultdict(list)
+        for r in rows:
+            groups[(r.get(column) or "").strip() or "?"].append(r)
+        for name, group_rows in sorted(groups.items()):
+            print_block(f"{column} : {name}", summarize(group_rows))
 
     total_time = sum(values(rows, "temps_reel_min")) or 1
     by_module = defaultdict(list)
