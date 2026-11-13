@@ -1,15 +1,14 @@
-"""API FastAPI — point de départ à compléter (voir docs/infos.md pour les routes).
+"""API FastAPI — SAE (voir docs/infos.md pour les routes).
 
 Doc interactive : http://localhost:8000/docs
 """
-import os
-
-import psycopg
-from fastapi import FastAPI
+import psycopg.errors as pgerr
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from psycopg.rows import dict_row
+from fastapi.responses import JSONResponse
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://sae:sae@localhost:5432/sae")
+from db import query
+from routers import academic, auth, groups, users
 
 app = FastAPI(title="SAE - API")
 
@@ -21,21 +20,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(academic.router)
+app.include_router(groups.router)
 
-def query(sql: str, params: tuple = ()) -> list[dict]:
-    """Exécute une requête SQL et renvoie les lignes sous forme de dicts."""
-    with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
-        cur = conn.execute(sql, params)
-        return cur.fetchall() if cur.description else []
+
+# Contraintes PostgreSQL -> codes HTTP lisibles
+@app.exception_handler(pgerr.UniqueViolation)
+async def _unique(_: Request, exc: pgerr.UniqueViolation):
+    return JSONResponse({"detail": "Cette valeur existe déjà (contrainte d'unicité)"}, status_code=409)
+
+
+@app.exception_handler(pgerr.ForeignKeyViolation)
+async def _fk(_: Request, exc: pgerr.ForeignKeyViolation):
+    # RESTRICT à la suppression, ou référence inexistante à l'insertion
+    msg = "Élément encore référencé ailleurs" if "still referenced" in str(exc) else "Référence inexistante"
+    return JSONResponse({"detail": msg}, status_code=409 if "still referenced" in str(exc) else 422)
+
+
+@app.exception_handler(pgerr.CheckViolation)
+async def _check(_: Request, exc: pgerr.CheckViolation):
+    return JSONResponse({"detail": "Valeurs invalides (contrainte de validation)"}, status_code=422)
 
 
 @app.get("/health")
 def health():
     query("SELECT 1")
     return {"status": "ok"}
-
-
-# Exemple de route : à dupliquer pour les autres ressources
-@app.get("/roles")
-def list_roles():
-    return query("SELECT id, code, label FROM roles ORDER BY id")

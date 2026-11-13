@@ -25,6 +25,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-sae}:${POSTGRES_PASSWORD:-sae}@db:5432/${POSTGRES_DB:-sae}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
     depends_on:
       db:
         condition: service_healthy
